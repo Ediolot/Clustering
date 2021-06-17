@@ -5,6 +5,7 @@
 #include "clustering/clustering_kmeans.h"
 #include "math/vector_randomizer.h"
 
+
 static void BM_ClusteringKMeans(benchmark::State& state) {
     using normal_dist = std::normal_distribution<double>;
     using uniform_dist = std::uniform_real_distribution<double>;
