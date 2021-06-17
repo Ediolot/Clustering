@@ -7,6 +7,7 @@
 
 
 #include "clustering.h"
+#include <optional>
 
 template<class VectorType>
 class ClusteringKMeans: public Clustering<VectorType> {
@@ -14,20 +15,21 @@ public:
     ClusteringKMeans() = default;
     ~ClusteringKMeans() = default;
 
-    void cluster(const std::vector<VectorType>& vectors, uint32_t n_centroids) override;
+    void cluster(const std::vector<VectorType>& vectors, uint32_t n_centroids, std::optional<int> max_iter = std::nullopt) override;
     void assign_step(const std::vector<VectorType> &vectors);
     bool recalculate_centroids(const std::vector<VectorType> &vectors);
 };
 
 template<class VectorType>
-void ClusteringKMeans<VectorType>::cluster(const std::vector<VectorType>& vectors, uint32_t n_centroids) {
-    auto centroids_indices = this->random_sample_indices(n_centroids, vectors.size());  // Pick random centroids
+void ClusteringKMeans<VectorType>::cluster(const std::vector<VectorType>& vectors, uint32_t n_centroids, std::optional<int> max_iter) {
+    auto centroids_indices = this->random_sample_indices(n_centroids, vectors.size() - 1);  // Pick random centroids
     this->centroids = this->centroids_from_indices(vectors, centroids_indices);
     this->assignments = std::vector<int>(vectors.size());  // Prepare the assignment for each point to a cluster
+    int iters = 0;
 
     do {
         assign_step(vectors);
-    } while (recalculate_centroids(vectors));
+    } while ((!max_iter.has_value() || iters++ < max_iter) && recalculate_centroids(vectors));
 }
 
 template<class VectorType>
@@ -63,10 +65,12 @@ bool ClusteringKMeans<VectorType>::recalculate_centroids(const std::vector<Vecto
     bool changed = false;
     for (int i = 0; i < this->centroids.size(); ++i) {
         this->centroids[i] /= centroid_count[i];
-        if (this->centroids[i] != old_centroids[i]) {
+        if (!this->centroids[i].equals(old_centroids[i])) {
             changed = true;
         }
     }
+    double before[6] = {old_centroids[0][0], old_centroids[0][1], old_centroids[1][0], old_centroids[1][1], old_centroids[2][0], old_centroids[2][1]};
+    double after[6] = {this->centroids[0][0], this->centroids[0][1], this->centroids[1][0], this->centroids[1][1], this->centroids[2][0], this->centroids[2][1]};
     return changed;
 }
 
