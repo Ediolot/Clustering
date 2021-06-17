@@ -24,9 +24,9 @@ int main() {
     randomizer.randomizeVectors(vectors2, {0}, uniform_dist(0, 1));
     randomizer.randomizeVectors(vectors2, {1}, uniform_dist(0.8, 1.0));
 
-    plotter.plot_vectors(vectors0, -1, 1);
-    plotter.plot_vectors(vectors1, -1, 1);
-    plotter.plot_vectors(vectors2, -1, 1);
+    plotter.plot_vectors(vectors0);
+    plotter.plot_vectors(vectors1);
+    plotter.plot_vectors(vectors2);
     plotter.draw();
 
     return 0;

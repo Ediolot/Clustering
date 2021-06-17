@@ -5,67 +5,56 @@
 #ifndef CLUSTERING_PLOTTER_H
 #define CLUSTERING_PLOTTER_H
 
-#include <numeric>
-#include <array>
 #include <vector>
-#include <tuple>
+#include <optional>
 #include "../math/vector.h"
 
-template<uint32_t width=79, uint32_t height=20>
 class Plotter {
 public:
-    Plotter() = default;
-    ~Plotter() = default;
+    struct Range {
+        double xmin = -1.0;
+        double xmax = +1.0;
+        double ymin = -1.0;
+        double ymax = +1.0;
+        [[nodiscard]] double xlen() const { return xmax - xmin; };
+        [[nodiscard]] double ylen() const { return ymax - ymin; };
+        [[nodiscard]] double fit_xrange(double x) const { return (x - xmin) / xlen(); }
+        [[nodiscard]] double fit_yrange(double y) const { return (y - ymin) / ylen(); }
+    };
 
-    static const char AUTOMATIC_SYMBOL = '\0';
+    Plotter();
+    Plotter(uint32_t width, uint32_t height);
+    Plotter(uint32_t width, uint32_t height, Range range);
+    ~Plotter() = default;
+    void clean();
+    void draw();
 
     template<class VectorType>
-    void plot_vectors(const std::vector<VectorType>& vectors, double min, double max, char symbol=AUTOMATIC_SYMBOL) {
-        static_assert(("Only Vector2D is supported in the plotter for now", std::is_same<VectorType, Vector2D>::value));
-
-        symbol = get_next_symbol(symbol);
-        for (const auto& vector : vectors) {
-            int x = int((vector[0] - min) * width / (max - min));
-            int y = height - int((vector[1] - min) * height / (max - min));  // Invert height, top row is 0
-            if (x < width && x >= 0 && y < height && y >= 0) {
-                matrix[y][x] = symbol;  // Todo: visual indicator when symbol was already there
-            }
-        }
-    }
-
-    void clean() {
-        matrix = {};
-    }
-
-    void draw() {
-        int last_row = matrix.size();
-        for (int i = 0; i < matrix.size() + 1; ++i) {
-            for (int j = 0; j < matrix[0].size() + 1; ++j) {
-                if (i == last_row)
-                    printf("-");
-                else if (j == 0)
-                    printf("|");
-                else
-                    printf("%c", matrix[i][j - 1]);
-            }
-            printf("\n");
-        }
-    }
+    void plot_vectors(const std::vector<VectorType>& vectors, std::optional<char> symbol = std::nullopt);
 
 private:
+    Range range{};
+    uint32_t width = 79;
+    uint32_t height = 15;
     char plot_symbol = 'a';
-    std::array<std::array<char, width>, height> matrix = {};
+    std::vector<char> matrix;
 
-    char get_next_symbol(char symbol) {
-        if (symbol == AUTOMATIC_SYMBOL) {
-            symbol = plot_symbol;
-            if (++plot_symbol == 'z') {
-                plot_symbol = 'a';
-            }
-        }
-        return symbol;
-    }
+    char get_next_symbol();
 };
+
+template<class VectorType>
+void Plotter::plot_vectors(const std::vector<VectorType> &vectors, std::optional<char> symbol) {
+    static_assert(("Only Vector2D is supported in the plotter for now", std::is_same<VectorType, Vector2D>::value));
+
+    char ch_symbol = symbol.has_value() ? symbol.value() : get_next_symbol();
+    for (const auto& vector : vectors) {
+        int x = int(range.fit_xrange(vector[0]) * width);
+        int y = int(range.fit_yrange(vector[1]) * height); // Invert height, top row is 0
+        if (x < width && x >= 0 && y < height && y >= 0) {
+            matrix[(height - y - 1) * width + x] = ch_symbol;  // Todo: visual indicator when two symbols at the same spot
+        }
+    }
+}
 
 
 #endif //CLUSTERING_PLOTTER_H

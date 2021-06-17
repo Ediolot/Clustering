@@ -11,107 +11,155 @@
 template<class T, size_t dims>
 class Vector {
 public:
+    explicit Vector(std::array<T, dims> elements);
+    Vector(const Vector& v);
+    Vector(Vector&& v) noexcept;
     Vector() = default;
+    ~Vector() = default;
 
-    // https://stackoverflow.com/questions/51705967/advantages-of-pass-by-value-and-stdmove-over-pass-by-reference
-    explicit Vector(std::array<T, dims> elements)
-        : data(std::move(elements))
-    {}
+    Vector operator+(const Vector& v);
+    Vector operator-(const Vector& v);
+    Vector operator+=(const Vector& v) noexcept;
+    Vector operator-=(const Vector& v) noexcept;
+    Vector& operator=(const Vector& v);
 
-    Vector(const Vector& v)
-        : data(v.data)
-    {}
+    Vector operator+(Vector&& v);
+    Vector operator-(Vector&& v);
+    Vector& operator=(Vector&& v) noexcept;
 
-    Vector(Vector&& v) noexcept
-        : data(std::move(v.data))
-    {}
+    const T& operator[](size_t i) const;
+    T& operator[](size_t i);
+    [[nodiscard]] constexpr size_t size() const;
 
-    virtual ~Vector() = default;
-
-    Vector operator+(const Vector& v) {
-        Vector result;
-        #pragma loop( ivdep )
-        for (int i = 0; i < dims; ++i) {
-            result[i] = (*this)[i] + v[i];
-        }
-        return result;
-    }
-
-    Vector operator+(Vector&& v) {
-        #pragma loop( ivdep )
-        for (int i = 0; i < dims; ++i) {
-            v[i] += this[i];
-        }
-        return std::move(v);
-    }
-
-    Vector operator-(const Vector& v) {
-        Vector result;
-        #pragma loop( ivdep )
-        for (int i = 0; i < dims; ++i) {
-            result[i] = (*this)[i] - v[i];
-        }
-        return result;
-    }
-
-    Vector operator-(Vector&& v) {
-        #pragma loop( ivdep )
-        for (int i = 0; i < dims; ++i) {
-            v[i] -= this[i];
-        }
-        return std::move(v);
-    }
-
-    Vector operator+=(const Vector& v) noexcept {
-        // We dont need a move += operator
-        #pragma loop( ivdep )
-        for (int i = 0; i < dims; ++i) {
-            this[i] += v[i];
-        }
-        return *this;
-    }
-
-    Vector operator-=(const Vector& v) noexcept {
-        // We dont need a move -= operator
-        #pragma loop( ivdep )
-        for (int i = 0; i < dims; ++i) {
-            this[i] -= v[i];
-        }
-        return *this;
-    }
-
-    Vector& operator=(const Vector& v) {
-        data = v.data;
-        return *this;
-    }
-
-    Vector& operator=(Vector&& v) noexcept {
-        data = std::move(v.data);
-        return *this;
-    }
-
-    const T& operator[](size_t i) const {
-        assert(("point access out of index", i < dims));
-        return data[i];
-    }
-
-    T& operator[](size_t i) {
-        assert(("point access out of index", i < dims));
-        return data[i];
-    }
-
-    [[nodiscard]] constexpr size_t size() const {
-        return dims;
-    }
-
-    typename std::array<T, dims>::iterator begin() { return data.begin(); }
-    typename std::array<T, dims>::iterator end() { return data.end(); }
-    typename std::array<T, dims>::const_iterator begin() const { return data.begin(); }
-    typename std::array<T, dims>::const_iterator end() const { return data.end(); }
+    typename std::array<T, dims>::iterator begin();
+    typename std::array<T, dims>::iterator end();
+    typename std::array<T, dims>::const_iterator begin() const;
+    typename std::array<T, dims>::const_iterator end() const;
 
 private:
     std::array<T, dims> data;
 };
+
+// see https://stackoverflow.com/questions/51705967/advantages-of-pass-by-value-and-stdmove-over-pass-by-reference
+template<class T, size_t dims>
+Vector<T, dims>::Vector(std::array<T, dims> elements)
+    : data(std::move(elements))
+{}
+
+template<class T, size_t dims>
+Vector<T, dims>::Vector(const Vector &v)
+    : data(v.data)
+{}
+
+template<class T, size_t dims>
+Vector<T, dims>::Vector(Vector &&v) noexcept
+    : data(std::move(v.data))
+{}
+
+template<class T, size_t dims>
+Vector<T, dims> Vector<T, dims>::operator+(const Vector &v) {
+    Vector result;
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        result[i] = (*this)[i] + v[i];
+    }
+    return result;
+}
+
+template<class T, size_t dims>
+Vector<T, dims> Vector<T, dims>::operator+(Vector &&v) {
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        v[i] += this[i];
+    }
+    return std::move(v);
+}
+
+template<class T, size_t dims>
+Vector<T, dims> Vector<T, dims>::operator-(const Vector &v) {
+    Vector result;
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        result[i] = (*this)[i] - v[i];
+    }
+    return result;
+}
+
+template<class T, size_t dims>
+Vector<T, dims> Vector<T, dims>::operator-(Vector &&v) {
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        v[i] -= this[i];
+    }
+    return std::move(v);
+}
+
+template<class T, size_t dims>
+Vector<T, dims> Vector<T, dims>::operator+=(const Vector &v) noexcept {
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        this[i] += v[i];
+    }
+    return *this;
+}
+
+template<class T, size_t dims>
+Vector<T, dims> Vector<T, dims>::operator-=(const Vector &v) noexcept {
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        this[i] -= v[i];
+    }
+    return *this;
+}
+
+template<class T, size_t dims>
+Vector<T, dims> &Vector<T, dims>::operator=(const Vector &v) {
+    data = v.data;
+    return *this;
+}
+
+template<class T, size_t dims>
+Vector<T, dims> &Vector<T, dims>::operator=(Vector &&v) noexcept {
+    data = std::move(v.data);
+    return *this;
+}
+
+template<class T, size_t dims>
+const T &Vector<T, dims>::operator[](size_t i) const {
+    assert(("point access out of index", i < dims));
+    return data[i];
+}
+
+template<class T, size_t dims>
+T &Vector<T, dims>::operator[](size_t i) {
+    assert(("point access out of index", i < dims));
+    return data[i];
+}
+
+template<class T, size_t dims>
+constexpr size_t Vector<T, dims>::size() const {
+    return dims;
+}
+
+template<class T, size_t dims>
+typename std::array<T, dims>::iterator Vector<T, dims>::begin() {
+    return data.begin();
+}
+
+template<class T, size_t dims>
+typename std::array<T, dims>::iterator Vector<T, dims>::end() {
+    return data.end();
+}
+
+template<class T, size_t dims>
+typename std::array<T, dims>::const_iterator Vector<T, dims>::begin() const {
+    return data.begin();
+}
+
+template<class T, size_t dims>
+typename std::array<T, dims>::const_iterator Vector<T, dims>::end() const {
+    return data.end();
+}
 
 using Vector2D = Vector<double, 2>;
 using Vector3D = Vector<double, 3>;

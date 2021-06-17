@@ -13,7 +13,6 @@ class Clustering {
 public:
     Clustering() = default;
     virtual ~Clustering() = default;
-
     virtual std::vector<int> cluster(const std::vector<VectorType>& vectors) = 0;
 };
 
