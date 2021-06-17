@@ -9,13 +9,14 @@
 #include <vector>
 #include <random>
 #include <algorithm>
+#include <optional>
 
 template<class VectorType>
 class Clustering {
 public:
     Clustering() = default;
     virtual ~Clustering() = default;
-    virtual void cluster(const std::vector<VectorType>& vectors, uint32_t n_centroids) = 0;
+    virtual void cluster(const std::vector<VectorType>& vectors, uint32_t n_centroids, std::optional<int> max_iter) = 0;
 
     [[nodiscard]] const std::vector<int>& get_assignments() const { return assignments; }
     [[nodiscard]] const std::vector<VectorType>& get_centroids() const { return centroids; }

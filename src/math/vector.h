@@ -6,6 +6,7 @@
 #define CLUSTERING_VECTOR_H
 
 #include <cassert>
+#include <array>
 #include <cmath>
 
 
@@ -33,8 +34,9 @@ public:
     Vector operator-(Vector&& v);
     Vector& operator=(Vector&& v) noexcept;
 
-    bool operator==(const Vector& v);
-    bool operator!=(const Vector& v);
+    bool equals(const Vector& v, double epsilon = 1e-10) const;
+    bool operator==(const Vector& v) const;
+    bool operator!=(const Vector& v) const;
 
     const T& operator[](size_t i) const;
     T& operator[](size_t i);
@@ -175,7 +177,7 @@ Vector<T, dims> &Vector<T, dims>::operator=(Vector &&v) noexcept {
 }
 
 template<class T, size_t dims>
-bool Vector<T, dims>::operator==(const Vector& v) {
+bool Vector<T, dims>::operator==(const Vector& v) const {
     if (this == &v) {
         return true;
     }
@@ -189,8 +191,22 @@ bool Vector<T, dims>::operator==(const Vector& v) {
 }
 
 template<class T, size_t dims>
-bool Vector<T, dims>::operator!=(const Vector& v) {
+bool Vector<T, dims>::operator!=(const Vector& v) const {
     return !operator==(v);
+}
+
+template<class T, size_t dims>
+bool Vector<T, dims>::equals(const Vector& v, double epsilon) const {
+    if (this == &v) {
+        return true;
+    }
+    #pragma loop( ivdep )
+    for (size_t i = 0; i < dims; ++i) {
+        if (std::abs((*this)[i] - v[i]) > epsilon) {
+            return false;
+        }
+    }
+    return true;
 }
 
 template<class T, size_t dims>
