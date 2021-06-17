@@ -42,3 +42,11 @@ char Plotter::get_next_symbol() {
     }
     return plot_symbol - 1;
 }
+
+std::vector<char> Plotter::get_next_n_symbols(int n) {
+    std::vector<char> symbols(n);
+    for (int i = 0; i < n; ++i) {
+        symbols[i] = get_next_symbol();
+    }
+    return symbols;
+}

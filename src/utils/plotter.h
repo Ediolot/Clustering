@@ -31,6 +31,8 @@ public:
 
     template<class VectorType>
     void plot_vectors(const std::vector<VectorType>& vectors, std::optional<char> symbol = std::nullopt);
+    template<class VectorType>
+    void plot_clusters(const std::vector<VectorType>& vectors, const std::vector<int>& assignments, const std::vector<VectorType>& centroids);
 
 private:
     Range range{};
@@ -40,6 +42,7 @@ private:
     std::vector<char> matrix;
 
     char get_next_symbol();
+    std::vector<char> get_next_n_symbols(int n);
 };
 
 template<class VectorType>
@@ -56,5 +59,28 @@ void Plotter::plot_vectors(const std::vector<VectorType> &vectors, std::optional
     }
 }
 
+template<class VectorType>
+void Plotter::plot_clusters(const std::vector<VectorType> &vectors, const std::vector<int> &assignments,
+                            const std::vector<VectorType> &centroids) {
+    static_assert(("Only Vector2D is supported in the plotter for now", std::is_same<VectorType, Vector2D>::value));
+    assert(("vectors and assignments must be the same size", vectors.size() == assignments.size()));
+    std::vector<char> symbols = get_next_n_symbols(centroids.size());
+
+    for (int i = 0; i < vectors.size(); ++i) {
+        int x = int(range.fit_xrange(vectors[i][0]) * width);
+        int y = int(range.fit_yrange(vectors[i][1]) * height);
+        if (x < width && x >= 0 && y < height && y >= 0) {
+            matrix[(height - y - 1) * width + x] = symbols[assignments[i]];
+        }
+    }
+
+    for (int i = 0; i < centroids.size(); ++i) {
+        int x = int(range.fit_xrange(centroids[i][0]) * width);
+        int y = int(range.fit_yrange(centroids[i][1]) * height);
+        if (x < width && x >= 0 && y < height && y >= 0) {
+            matrix[(height - y - 1) * width + x] = symbols[i] - 32;
+        }
+    }
+}
 
 #endif //CLUSTERING_PLOTTER_H

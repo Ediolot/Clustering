@@ -2,10 +2,11 @@
 // Created by jsier on 10/06/2021.
 //
 
-#include <cassert>
-
 #ifndef CLUSTERING_VECTOR_H
 #define CLUSTERING_VECTOR_H
+
+#include <cassert>
+#include <cmath>
 
 
 template<class T, size_t dims>
@@ -19,17 +20,28 @@ public:
 
     Vector operator+(const Vector& v);
     Vector operator-(const Vector& v);
-    Vector operator+=(const Vector& v) noexcept;
-    Vector operator-=(const Vector& v) noexcept;
+    Vector& operator+=(const Vector& v);
+    Vector& operator-=(const Vector& v);
     Vector& operator=(const Vector& v);
+
+    Vector operator+(const T& value);
+    Vector operator-(const T& value);
+    Vector& operator/=(const T& value);
+    Vector& operator*=(const T& value);
 
     Vector operator+(Vector&& v);
     Vector operator-(Vector&& v);
     Vector& operator=(Vector&& v) noexcept;
 
+    bool operator==(const Vector& v);
+    bool operator!=(const Vector& v);
+
     const T& operator[](size_t i) const;
     T& operator[](size_t i);
     [[nodiscard]] constexpr size_t size() const;
+
+    double euclidean_distance(const Vector& v) const;
+    void fill(const T& value);
 
     typename std::array<T, dims>::iterator begin();
     typename std::array<T, dims>::iterator end();
@@ -70,7 +82,7 @@ template<class T, size_t dims>
 Vector<T, dims> Vector<T, dims>::operator+(Vector &&v) {
     #pragma loop( ivdep )
     for (int i = 0; i < dims; ++i) {
-        v[i] += this[i];
+        v[i] += (*this)[i];
     }
     return std::move(v);
 }
@@ -89,25 +101,63 @@ template<class T, size_t dims>
 Vector<T, dims> Vector<T, dims>::operator-(Vector &&v) {
     #pragma loop( ivdep )
     for (int i = 0; i < dims; ++i) {
-        v[i] -= this[i];
+        v[i] -= (*this)[i];
     }
     return std::move(v);
 }
 
 template<class T, size_t dims>
-Vector<T, dims> Vector<T, dims>::operator+=(const Vector &v) noexcept {
+Vector<T, dims> Vector<T, dims>::operator+(const T& value) {
+    Vector result;
     #pragma loop( ivdep )
     for (int i = 0; i < dims; ++i) {
-        this[i] += v[i];
+        result[i] = (*this)[i] + value;
+    }
+    return result;
+}
+
+template<class T, size_t dims>
+Vector<T, dims> Vector<T, dims>::operator-(const T& value) {
+    Vector result;
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        result[i] = (*this)[i] + value;
+    }
+    return result;
+}
+
+template<class T, size_t dims>
+Vector<T, dims>& Vector<T, dims>::operator+=(const Vector &v) {
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        (*this)[i] += v[i];
     }
     return *this;
 }
 
 template<class T, size_t dims>
-Vector<T, dims> Vector<T, dims>::operator-=(const Vector &v) noexcept {
+Vector<T, dims>& Vector<T, dims>::operator-=(const Vector &v) {
     #pragma loop( ivdep )
     for (int i = 0; i < dims; ++i) {
-        this[i] -= v[i];
+        (*this)[i] -= v[i];
+    }
+    return *this;
+}
+
+template<class T, size_t dims>
+Vector<T, dims>& Vector<T, dims>::operator/=(const T& value) {
+    #pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        (*this)[i] /= value;
+    }
+    return *this;
+}
+
+template<class T, size_t dims>
+Vector<T, dims>& Vector<T, dims>::operator*=(const T& value) {
+#pragma loop( ivdep )
+    for (int i = 0; i < dims; ++i) {
+        (*this)[i] /= value;
     }
     return *this;
 }
@@ -122,6 +172,25 @@ template<class T, size_t dims>
 Vector<T, dims> &Vector<T, dims>::operator=(Vector &&v) noexcept {
     data = std::move(v.data);
     return *this;
+}
+
+template<class T, size_t dims>
+bool Vector<T, dims>::operator==(const Vector& v) {
+    if (this == &v) {
+        return true;
+    }
+    #pragma loop( ivdep )
+    for (size_t i = 0; i < dims; ++i) {
+        if ((*this)[i] != v[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<class T, size_t dims>
+bool Vector<T, dims>::operator!=(const Vector& v) {
+    return !operator==(v);
 }
 
 template<class T, size_t dims>
@@ -159,6 +228,24 @@ typename std::array<T, dims>::const_iterator Vector<T, dims>::begin() const {
 template<class T, size_t dims>
 typename std::array<T, dims>::const_iterator Vector<T, dims>::end() const {
     return data.end();
+}
+
+template<class T, size_t dims>
+double Vector<T, dims>::euclidean_distance(const Vector &v) const {
+    double acc = 0;
+    #pragma loop( ivdep )
+    for (size_t i = 0; i < dims; ++i) {
+        acc += ((*this)[i] - v[i]) * ((*this)[i] - v[i]);
+    }
+    return std::sqrt(acc);
+}
+
+template<class T, size_t dims>
+void Vector<T, dims>::fill(const T &value) {
+    #pragma loop( ivdep )
+    for (size_t i = 0; i < dims; ++i) {
+        (*this)[i] = value;
+    }
 }
 
 using Vector2D = Vector<double, 2>;

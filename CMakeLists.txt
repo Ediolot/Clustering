@@ -3,4 +3,4 @@ project(clustering)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(clustering src/main.cpp src/clustering/clustering.cpp src/clustering/clustering_kmeans.cpp src/math/vector_randomizer.h src/utils/plotter.cpp)
+add_executable(clustering src/main.cpp src/math/vector_randomizer.h src/utils/plotter.cpp)
